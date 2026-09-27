@@ -8,7 +8,7 @@ from sqlalchemy.orm import Session
 
 from ..database import get_db
 from ..models import Users, PasswordResets
-from ..schemas import UserCreate, UserOut, Token, PasswordResetRequest, PasswordResetConfirm
+from ..schemas import Token, PasswordResetRequest, PasswordResetConfirm
 from ..auth import hash_password, authenticate_user, create_access_token
 from ..email_service import send_password_reset_email
 
@@ -40,35 +40,6 @@ def _generate_reset_code(db: Session) -> str:
         status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
         detail="Could not generate a unique reset code. Please try again."
     )
-
-
-@router.post("/register", response_model=UserOut, status_code=status.HTTP_201_CREATED)
-async def register_user(db: db_dependency, create_user_request: UserCreate):
-    existing_user = db.query(Users).filter(
-        (Users.username == create_user_request.username) |
-        (Users.email == create_user_request.email)
-    ).first()
-    if existing_user:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="A user with that username or email already exists"
-        )
-
-    new_user = Users(
-        email=create_user_request.email,
-        username=create_user_request.username,
-        first_name=create_user_request.first_name,
-        last_name=create_user_request.last_name,
-        role=create_user_request.role,
-        hashed_password=hash_password(create_user_request.password),
-        is_active=True,
-        phone_number=create_user_request.phone_number
-    )
-
-    db.add(new_user)
-    db.commit()
-    db.refresh(new_user)
-    return new_user
 
 
 @router.post("/token", response_model=Token)
