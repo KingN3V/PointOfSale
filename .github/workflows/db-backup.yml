@@ -1,0 +1,44 @@
+name: db-backup
+
+on:
+  schedule:
+    - cron: "0 1 * * *"   # daily at 01:00 UTC (04:00 in Kenya)
+  workflow_dispatch: {}    # lets you run it by hand from the Actions tab
+
+permissions:
+  contents: read
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    steps:
+      # pg_dump must be at least as new as Neon's Postgres version,
+      # so install a recent client instead of using the runner's default.
+      - name: Install recent pg_dump
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y postgresql-common
+          sudo /usr/share/postgresql-common/pgdg/apt.postgresql.org.sh -y
+          sudo apt-get install -y postgresql-client-18
+
+      - name: Dump database
+        env:
+          DATABASE_URL: ${{ secrets.NEON_DATABASE_URL }}
+        run: |
+          FILE="pos-backup-$(date -u +%Y-%m-%dT%H-%M-%SZ).dump"
+          /usr/lib/postgresql/18/bin/pg_dump "$DATABASE_URL" \
+            --format=custom --no-owner --file="$FILE"
+          echo "FILE=$FILE" >> "$GITHUB_ENV"
+          ls -lh "$FILE"
+
+      - name: Upload to R2
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: auto
+          # Avoids checksum-header errors some S3-compatible stores throw
+          AWS_REQUEST_CHECKSUM_CALCULATION: when_required
+          AWS_RESPONSE_CHECKSUM_VALIDATION: when_required
+        run: |
+          aws s3 cp "$FILE" "s3://${{ secrets.R2_BUCKET }}/$FILE" \
+            --endpoint-url "${{ secrets.R2_ENDPOINT }}"
