@@ -10,7 +10,7 @@ permissions:
 
 jobs:
   backup:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       # pg_dump must be at least as new as Neon's Postgres version,
       # so install a recent client instead of using the runner's default.
