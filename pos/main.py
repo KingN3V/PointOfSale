@@ -1,15 +1,23 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from slowapi import _rate_limit_exceeded_handler
+from slowapi.errors import RateLimitExceeded
 
 from .database import engine, Base
 from . import models
+from .limiter import limiter
 from .routers import auth, products, orders, customers, reports
 
 app = FastAPI(title="POS System")
 
 Base.metadata.create_all(bind=engine)
 
-origins = ["*"]
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+
+# The Android app doesn't use CORS (only browsers enforce it), so this only
+# needs to allow the API's own /docs page.
+origins = ["https://pointofsale-api.onrender.com"]
 
 app.add_middleware(
     CORSMiddleware,

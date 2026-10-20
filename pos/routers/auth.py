@@ -1,8 +1,9 @@
 from datetime import datetime, timedelta
-import random
+import logging
+import secrets
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 
@@ -11,11 +12,15 @@ from ..models import Users, PasswordResets
 from ..schemas import Token, PasswordResetRequest, PasswordResetConfirm
 from ..auth import hash_password, authenticate_user, create_access_token
 from ..email_service import send_password_reset_email
+from ..limiter import limiter
+
 
 router = APIRouter(
     prefix="/auth",
     tags=["auth"]
 )
+
+logger = logging.getLogger(__name__)
 
 db_dependency = Annotated[Session, Depends(get_db)]
 
@@ -32,7 +37,7 @@ def _generate_reset_code(db: Session) -> str:
     pick could collide with a past (expired/used) code.
     """
     for _ in range(10):
-        code = "".join(random.choices(RESET_CODE_ALPHABET, k=RESET_CODE_LENGTH))
+        code = "".join(secrets.choice(RESET_CODE_ALPHABET) for _ in range(RESET_CODE_LENGTH))
         exists = db.query(PasswordResets).filter(PasswordResets.reset_token == code).first()
         if not exists:
             return code
@@ -43,7 +48,9 @@ def _generate_reset_code(db: Session) -> str:
 
 
 @router.post("/token", response_model=Token)
+@limiter.limit("10/minute")
 async def login_for_access_token(
+    request: Request,
     form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
     db: db_dependency
 ):
@@ -64,18 +71,15 @@ async def login_for_access_token(
     }
 
 
-# ---------- Password reset ----------
-
 @router.post("/forgot-password", status_code=status.HTTP_200_OK)
-async def forgot_password(db: db_dependency, request: PasswordResetRequest):
+@limiter.limit("5/minute")
+async def forgot_password(request: Request, db: db_dependency, body: PasswordResetRequest):
     generic_response = {
         "message": "If that email is registered, a reset code has been sent."
     }
 
-    user = db.query(Users).filter(Users.email == request.email).first()
+    user = db.query(Users).filter(Users.email == body.email).first()
     if not user:
-        # Same response whether or not the email exists, so this endpoint
-        # can't be used to check who's registered.
         return generic_response
 
     code = _generate_reset_code(db)
@@ -88,24 +92,21 @@ async def forgot_password(db: db_dependency, request: PasswordResetRequest):
     db.add(reset)
     db.commit()
 
-    # If the email fails to send, surface a real error rather than the
-    # generic response — a code that was never delivered but silently
-    # "succeeded" would leave her stuck with no way to know why.
+    # Don't reveal send failures to the client: a different response for a
+    # registered email would leak which emails exist. Check the server logs.
     try:
         send_password_reset_email(user.email, code)
-    except Exception as e:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Could not send the reset email: {e}"
-        )
+    except Exception:
+        logger.exception("Password reset email failed to send")
 
     return generic_response
 
 
 @router.post("/reset-password", status_code=status.HTTP_200_OK)
-async def reset_password(db: db_dependency, request: PasswordResetConfirm):
+@limiter.limit("5/minute")
+async def reset_password(request: Request, db: db_dependency, body: PasswordResetConfirm):
     reset = db.query(PasswordResets).filter(
-        PasswordResets.reset_token == request.reset_token,
+        PasswordResets.reset_token == body.reset_token,
         PasswordResets.used == False
     ).first()
 
@@ -119,7 +120,7 @@ async def reset_password(db: db_dependency, request: PasswordResetConfirm):
     if not user:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
 
-    user.hashed_password = hash_password(request.new_password)
+    user.hashed_password = hash_password(body.new_password)
     reset.used = True
     db.commit()
 
