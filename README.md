@@ -131,7 +131,7 @@ I'm listing these deliberately; they are the first things I would improve.
 - **Checkout is two requests** (create order, then record payment) from the client. A dropped connection between them leaves an open order holding stock. A single transactional endpoint or an idempotency key would remove this.
 - **No migrations.** Tables come from `create_all`, which does not alter existing tables. Alembic is the next step once the schema needs to change.
 - **Query efficiency.** Some responses and reports issue a query per row. Joins/eager loading and SQL aggregates would fix this, and endpoints should move to plain `def` or an async engine so blocking database calls don't sit in `async def` handlers.
-- **Security hardening still to do:** rate limiting on login and reset, reset codes generated with `secrets` instead of `random`, a tighter CORS policy, token refresh, and not returning raw SMTP errors to the client.
+- **Token refresh and ongoing security hardening.** Access tokens expire after 60 minutes and there is no refresh flow yet.
 - **Time zones.** Timestamps are stored in UTC and the "today" boundary is computed in UTC, so the day rolls over at 3 a.m. Kenya time. Ranges should be computed in `Africa/Nairobi`.
 - **M-Pesa STK Push** is planned. Payment methods are currently recorded as `CASH` or `MPESA` and confirmed by the shop owner.
 
