@@ -13,7 +13,7 @@ It is built with **FastAPI** and **PostgreSQL**, and is used in production by th
 
 ## Features
 
-- **Authentication:** JWT login, plus password reset by emailed code (8 characters, 15-minute expiry). Registration is closed in production; accounts are created directly in the database.
+- **Authentication:** JWT login with rate limiting, plus password reset by emailed code (8 characters, 15-minute expiry). Registration is closed in production; accounts are created directly in the database.
 - **Products and categories:** SKU uniqueness per owner, buying and selling prices, soft delete (hide/unhide) so past sales keep their product names.
 - **Stock tracking:** every change to stock goes through an auditable `stock_movements` log (initial stock, restock, sale, cancelled sale, expired, damaged, correction). Stock can never go negative.
 - **Orders and payments:** multi-item orders, walk-in or customer sales, partial payments, credit sales, cancellation of open orders (stock goes back), and rejection of overpayment.
@@ -40,7 +40,8 @@ PointOfSale/
 ├── requirements.txt
 ├── .env                    # not committed
 └── pos/
-    ├── main.py             # app setup, CORS, router registration
+    ├── main.py             # app setup, CORS, rate limiting, router registration
+    ├── limiter.py          # shared rate limiter (slowapi)
     ├── database.py         # engine and session (pool_pre_ping for Neon)
     ├── models.py           # SQLAlchemy models
     ├── schemas.py          # Pydantic request/response schemas
@@ -56,7 +57,7 @@ PointOfSale/
 
 ## Running locally
 
-Requirements: Python 3.10+ and a PostgreSQL database.
+Requirements: Python 3.14.4 and a PostgreSQL database.
 
 ```bash
 git clone https://github.com/KingN3V/PointOfSale.git
