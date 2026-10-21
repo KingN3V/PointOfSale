@@ -57,7 +57,7 @@ PointOfSale/
 
 ## Running locally
 
-Requirements: Python 3.14.4 and a PostgreSQL database.
+Requirements: a recent Python 3 (developed on 3.14.4) and a PostgreSQL database.
 
 ```bash
 git clone https://github.com/KingN3V/PointOfSale.git
@@ -120,7 +120,6 @@ Every endpoint except the auth routes requires a `Bearer` token.
 - **Price and cost snapshots.** `unit_price` and `unit_cost` are copied onto each order item, so later price changes never rewrite past sales or profit. Items sold without a known buying price are counted separately (`units_missing_cost`) instead of being treated as zero cost.
 - **Order lifecycle.** `open` becomes `completed` once payments cover the total, or `cancelled` while still open. Payments cannot exceed the remaining balance; change is given separately.
 - **Soft delete for products.** Hiding a product keeps historical orders readable.
-- **Password reset.** The same response is returned whether or not an email is registered, so the endpoint cannot be used to discover accounts.
 - **Neon-friendly connections.** `pool_pre_ping` and `pool_recycle` handle connections that Neon's pooler closes while idle.
 - **No account enumeration.** Password reset returns the same response whether or not an email is registered, including when sending the email fails (the failure is logged server-side, not returned).
 
