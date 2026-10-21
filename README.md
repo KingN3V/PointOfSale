@@ -122,6 +122,7 @@ Every endpoint except the auth routes requires a `Bearer` token.
 - **Soft delete for products.** Hiding a product keeps historical orders readable.
 - **Password reset.** The same response is returned whether or not an email is registered, so the endpoint cannot be used to discover accounts.
 - **Neon-friendly connections.** `pool_pre_ping` and `pool_recycle` handle connections that Neon's pooler closes while idle.
+- **No account enumeration.** Password reset returns the same response whether or not an email is registered, including when sending the email fails (the failure is logged server-side, not returned).
 
 ## Known limitations and next steps
 
