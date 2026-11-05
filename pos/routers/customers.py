@@ -18,7 +18,7 @@ user_dependency = Annotated[Users, Depends(get_current_user)]
 
 
 @router.post("/", response_model=CustomerOut, status_code=status.HTTP_201_CREATED)
-async def create_customer(user: user_dependency, db: db_dependency, customer: CustomerCreate):
+def create_customer(user: user_dependency, db: db_dependency, customer: CustomerCreate):
     if customer.phone_number:
         existing = db.query(Customers).filter(
             Customers.phone_number == customer.phone_number,
@@ -38,7 +38,7 @@ async def create_customer(user: user_dependency, db: db_dependency, customer: Cu
 
 
 @router.get("/", response_model=List[CustomerOut])
-async def list_customers(user: user_dependency, db: db_dependency, q: Optional[str] = None):
+def list_customers(user: user_dependency, db: db_dependency, q: Optional[str] = None):
     query = db.query(Customers).filter(Customers.owner_id == user.id)
     if q:
         like = f"%{q}%"
@@ -48,7 +48,7 @@ async def list_customers(user: user_dependency, db: db_dependency, q: Optional[s
     return query.all()
 
 @router.get("/{customer_id}", response_model=CustomerOut)
-async def get_customer(user: user_dependency, db: db_dependency, customer_id: int):
+def get_customer(user: user_dependency, db: db_dependency, customer_id: int):
     customer = db.query(Customers).filter(
         Customers.id == customer_id,
         Customers.owner_id == user.id
@@ -59,7 +59,7 @@ async def get_customer(user: user_dependency, db: db_dependency, customer_id: in
 
 
 @router.patch("/{customer_id}", response_model=CustomerOut)
-async def update_customer(
+def update_customer(
     user: user_dependency,
     db: db_dependency,
     customer_id: int,

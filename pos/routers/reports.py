@@ -111,7 +111,7 @@ def _excel_response(filename: str, header: List[str], rows: List[list]) -> Strea
 # ---------- Sales Summary ----------
 
 @router.get("/sales-summary")
-async def sales_summary(
+def sales_summary(
     user: user_dependency,
     db: db_dependency,
     period: Optional[str] = Query(None, description="today, week, or month"),
@@ -181,7 +181,7 @@ async def sales_summary(
 # ---------- Top Products ----------
 
 @router.get("/top-products")
-async def top_products(
+def top_products(
     user: user_dependency,
     db: db_dependency,
     period: Optional[str] = Query(None, description="today, week, or month"),
@@ -250,7 +250,7 @@ async def top_products(
 # ---------- Low Stock ----------
 
 @router.get("/low-stock")
-async def low_stock(
+def low_stock(
     user: user_dependency,
     db: db_dependency,
     threshold: int = 5,
@@ -283,7 +283,7 @@ async def low_stock(
 # ---------- Outstanding Balances ----------
 
 @router.get("/outstanding-balances")
-async def outstanding_balances(
+def outstanding_balances(
     user: user_dependency,
     db: db_dependency,
     q: Optional[str] = None,

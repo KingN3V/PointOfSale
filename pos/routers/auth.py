@@ -49,7 +49,7 @@ def _generate_reset_code(db: Session) -> str:
 
 @router.post("/token", response_model=Token)
 @limiter.limit("10/minute")
-async def login_for_access_token(
+def login_for_access_token(
     request: Request,
     form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
     db: db_dependency
@@ -73,7 +73,7 @@ async def login_for_access_token(
 
 @router.post("/forgot-password", status_code=status.HTTP_200_OK)
 @limiter.limit("5/minute")
-async def forgot_password(request: Request, db: db_dependency, body: PasswordResetRequest):
+def forgot_password(request: Request, db: db_dependency, body: PasswordResetRequest):
     generic_response = {
         "message": "If that email is registered, a reset code has been sent."
     }
@@ -104,7 +104,7 @@ async def forgot_password(request: Request, db: db_dependency, body: PasswordRes
 
 @router.post("/reset-password", status_code=status.HTTP_200_OK)
 @limiter.limit("5/minute")
-async def reset_password(request: Request, db: db_dependency, body: PasswordResetConfirm):
+def reset_password(request: Request, db: db_dependency, body: PasswordResetConfirm):
     reset = db.query(PasswordResets).filter(
         PasswordResets.reset_token == body.reset_token,
         PasswordResets.used == False
