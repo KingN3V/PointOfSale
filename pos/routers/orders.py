@@ -101,7 +101,7 @@ def _with_extras(db: Session, order: Orders) -> Orders:
 # ---------- Orders ----------
 
 @router.post("/", response_model=OrderOut, status_code=status.HTTP_201_CREATED)
-async def create_order(user: user_dependency, db: db_dependency, order: OrderCreate):
+def create_order(user: user_dependency, db: db_dependency, order: OrderCreate):
     if not order.items:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -206,7 +206,7 @@ async def create_order(user: user_dependency, db: db_dependency, order: OrderCre
 
 
 @router.get("/", response_model=List[OrderOut])
-async def list_orders(
+def list_orders(
     user: user_dependency,
     db: db_dependency,
     status_filter: Optional[str] = None,
@@ -279,7 +279,7 @@ async def list_orders(
 
 
 @router.get("/{order_id}", response_model=OrderOut)
-async def get_order(user: user_dependency, db: db_dependency, order_id: int):
+def get_order(user: user_dependency, db: db_dependency, order_id: int):
     order = db.query(Orders).filter(
         Orders.id == order_id,
         Orders.owner_id == user.id
@@ -291,7 +291,7 @@ async def get_order(user: user_dependency, db: db_dependency, order_id: int):
 
 
 @router.post("/{order_id}/cancel", response_model=OrderOut)
-async def cancel_order(user: user_dependency, db: db_dependency, order_id: int):
+def cancel_order(user: user_dependency, db: db_dependency, order_id: int):
     # The order row is locked so a double tap (or two devices) cannot cancel the
     # same order twice and put its stock back twice.
     order = db.query(Orders).filter(
@@ -344,7 +344,7 @@ async def cancel_order(user: user_dependency, db: db_dependency, order_id: int):
     response_model=PaymentOut,
     status_code=status.HTTP_201_CREATED
 )
-async def create_payment(
+def create_payment(
     user: user_dependency,
     db: db_dependency,
     order_id: int,
@@ -410,7 +410,7 @@ async def create_payment(
 
 
 @router.get("/{order_id}/payments", response_model=List[PaymentOut])
-async def list_payments(user: user_dependency, db: db_dependency, order_id: int):
+def list_payments(user: user_dependency, db: db_dependency, order_id: int):
     order = db.query(Orders).filter(
         Orders.id == order_id,
         Orders.owner_id == user.id

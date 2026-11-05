@@ -26,7 +26,7 @@ user_dependency = Annotated[Users, Depends(get_current_user)]
 # ---------- Categories ----------
 
 @router.post("/categories", response_model=CategoryOut, status_code=status.HTTP_201_CREATED)
-async def create_category(user: user_dependency, db: db_dependency, category: CategoryCreate):
+def create_category(user: user_dependency, db: db_dependency, category: CategoryCreate):
     existing = db.query(Categories).filter(
         Categories.name == category.name,
         Categories.owner_id == user.id
@@ -44,14 +44,14 @@ async def create_category(user: user_dependency, db: db_dependency, category: Ca
 
 
 @router.get("/categories", response_model=List[CategoryOut])
-async def list_categories(user: user_dependency, db: db_dependency):
+def list_categories(user: user_dependency, db: db_dependency):
     return db.query(Categories).filter(Categories.owner_id == user.id).all()
 
 
 # ---------- Products ----------
 
 @router.post("/", response_model=ProductOut, status_code=status.HTTP_201_CREATED)
-async def create_product(user: user_dependency, db: db_dependency, product: ProductCreate):
+def create_product(user: user_dependency, db: db_dependency, product: ProductCreate):
     existing = db.query(Products).filter(
         Products.sku == product.sku,
         Products.owner_id == user.id
@@ -94,7 +94,7 @@ async def create_product(user: user_dependency, db: db_dependency, product: Prod
 
 
 @router.get("/", response_model=List[ProductOut])
-async def list_products(
+def list_products(
     user: user_dependency,
     db: db_dependency,
     visibility: str = Query("active", description="active, hidden, or all"),
@@ -120,7 +120,7 @@ async def list_products(
 
 
 @router.get("/{product_id}", response_model=ProductOut)
-async def get_product(user: user_dependency, db: db_dependency, product_id: int):
+def get_product(user: user_dependency, db: db_dependency, product_id: int):
     product = db.query(Products).filter(
         Products.id == product_id,
         Products.owner_id == user.id
@@ -131,7 +131,7 @@ async def get_product(user: user_dependency, db: db_dependency, product_id: int)
 
 
 @router.patch("/{product_id}", response_model=ProductOut)
-async def update_product(
+def update_product(
     user: user_dependency,
     db: db_dependency,
     product_id: int,
@@ -178,7 +178,7 @@ async def update_product(
 
 
 @router.delete("/{product_id}", status_code=status.HTTP_204_NO_CONTENT)
-async def deactivate_product(user: user_dependency, db: db_dependency, product_id: int):
+def deactivate_product(user: user_dependency, db: db_dependency, product_id: int):
     product = db.query(Products).filter(
         Products.id == product_id,
         Products.owner_id == user.id
@@ -198,7 +198,7 @@ async def deactivate_product(user: user_dependency, db: db_dependency, product_i
     response_model=StockMovementOut,
     status_code=status.HTTP_201_CREATED
 )
-async def create_stock_movement(
+def create_stock_movement(
     user: user_dependency,
     db: db_dependency,
     product_id: int,
@@ -244,7 +244,7 @@ async def create_stock_movement(
 
 
 @router.get("/{product_id}/stock-movements", response_model=List[StockMovementOut])
-async def list_stock_movements(user: user_dependency, db: db_dependency, product_id: int):
+def list_stock_movements(user: user_dependency, db: db_dependency, product_id: int):
     product = db.query(Products).filter(
         Products.id == product_id,
         Products.owner_id == user.id
