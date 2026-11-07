@@ -29,6 +29,21 @@ from pos import models  # noqa: E402
 from pos.auth import create_access_token, hash_password  # noqa: E402
 from pos.database import Base, SessionLocal, engine  # noqa: E402
 from pos.main import app  # noqa: E402
+from pathlib import Path  # noqa: E402
+
+from alembic import command  # noqa: E402
+from alembic.config import Config  # noqa: E402
+
+ROOT = Path(__file__).resolve().parent.parent
+
+@pytest.fixture(scope="session", autouse=True)
+def migrated_test_db():
+    """Builds the test database with the real migrations, once per test run.
+    (Replaces the old create_all that used to run when pos.main was imported.)"""
+    assert engine.url.database.endswith("_test")
+    cfg = Config(str(ROOT / "alembic.ini"))
+    cfg.set_main_option("script_location", str(ROOT / "alembic"))
+    command.upgrade(cfg, "head")
 
 
 @pytest.fixture(autouse=True)
