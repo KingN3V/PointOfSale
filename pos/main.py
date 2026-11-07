@@ -3,14 +3,10 @@ from fastapi.middleware.cors import CORSMiddleware
 from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 
-from .database import engine, Base
-from . import models
 from .limiter import limiter
 from .routers import auth, products, orders, customers, reports
 
 app = FastAPI(title="POS System")
-
-Base.metadata.create_all(bind=engine)
 
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
